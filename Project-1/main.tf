@@ -1,3 +1,6 @@
+
+# Sample Code for Creating - Resources: AWS-EC2 Instance, AWS-VPC, AWS - Subnet.
+
 provider "aws" {
 region     = "eu-central-1"
 access_key = "AKIA6GBMGA5K5PUGWJ6L"
