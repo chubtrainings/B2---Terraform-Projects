@@ -1,10 +1,12 @@
 
 # Sample Code for Creating - Resources: Provider for AWS, AWS-EC2 Instance, AWS-VPC, AWS - Subnet.
+#
+# Replace Your_Access_Key - With  your Account Access Key & Your_Secret_Key: With your Your_Secret_Key
 
 provider "aws" {
 region     = "eu-central-1"
-access_key = "AKIA6GBMGA5K5PUGWJ6L"
-secret_key = "jqq2v3uxRxETOJOnnvLMx1QQzQQ6EE/fB8mS8U0F"
+access_key = "Your_Access_Key"
+secret_key = "Your_Secret_Key"
 }
 
 // 1. AWS VPC
