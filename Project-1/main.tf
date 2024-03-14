@@ -1,5 +1,5 @@
 
-# Sample Code for Creating - Resources: AWS-EC2 Instance, AWS-VPC, AWS - Subnet.
+# Sample Code for Creating - Resources: Provider for AWS, AWS-EC2 Instance, AWS-VPC, AWS - Subnet.
 
 provider "aws" {
 region     = "eu-central-1"
