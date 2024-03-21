@@ -1,0 +1,13 @@
+https://www.digitalocean.com/community/tutorials/how-to-create-reusable-infrastructure-with-terraform-modules-and-templates
+
+
+https://github.com/jwendl/terraform-modules-example/tree/main/with/modules/functions
+
+https://www.hashicorp.com/blog/terraform-modules-on-aws
+
+https://github.com/aws-ia/terraform-aws-vpc
+
+
+
+
+
