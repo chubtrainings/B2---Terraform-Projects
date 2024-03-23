@@ -1,0 +1,1 @@
+This is the test file created and copied from local system to ec2 instance using file provisioner.
