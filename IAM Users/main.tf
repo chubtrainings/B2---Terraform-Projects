@@ -1,7 +1,7 @@
 provider "aws" {
 region     = "eu-central-1"
-access_key = "AKIA6GBMGA5K5PUGWJ6L"
-secret_key = "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"
+access_key = "xxxxxxxxxxxxxx"
+secret_key = "xxxxxxxxxxxxxx"
 }
 
 // 1. AWS VPC
