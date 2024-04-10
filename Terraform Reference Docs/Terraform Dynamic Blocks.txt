@@ -1,0 +1,294 @@
+Topics:
+	
+	1. Terraform Dynamic Blocks
+	2. Terraform Data sources
+ 
+
+
+
+Terraform Dynamic Blocks:
+=========================
+
+	Terraform Dynamic Block is important when you want to create multiple resources inside of similar types, 
+	so instead of copy and pasting the same terraform configuration in the terraform file does not make sense 
+	and it is not feasible if you need to create hundreds of resources using terraform.
+
+	If we describe terraform dynamic block in simple words then it is for loop which is going to iterate over and will help you to create a dynamic resource. 
+	With the help of dynamic blocks you can create nested repeatable blocks such as settings, ingress rules etc...
+	
+	
+	1. Syntax of Dynamic Block
+		As we said dynamic block is more or less another way to implement for loop. Here are few facts about dynamic block which you should keep in mind -
+
+		Collections - You need to have collections .e.g. - list, map, set
+		Iterator - To create a dynamic block you need to define an iterator.
+		Content - Content is something onto which you wanna iterate.
+		Here is the syntax of dynamic block -
+		
+		
+		2. How to create your first terraform dynamic block
+	Before we implement our first terraform dynamic block let's first see an example without dynamic block.
+	In this example, we are going to create two ingress rules for the aws_security_group. 
+	Both ingress rules are exactly the same apart from the port numbers .i.e. - 80 and 443. 
+	So if we do not use dynamic block then we need to create two ingress rules blocks inside the terraform file.
+	
+	
+	====================================================================
+	resource "aws_security_group" "main" {
+		   name   = "resource_without_dynamic_block"
+		   vpc_id = data.aws_vpc.main.id
+
+		   ingress {
+			  description = "ingress_rule_1"
+			  from_port   = 443
+			  to_port     = 443
+			  protocol    = "tcp"
+			  cidr_blocks = ["0.0.0.0/0"]
+		   }
+		   
+		   ingress {
+			  description = "ingress_rule_2"
+			  from_port   = 80
+			  to_port     = 80
+			  protocol    = "tcp"
+			  cidr_blocks = ["0.0.0.0/0"]
+		   }
+
+		   tags = {
+			  Name = "AWS security group non-dynamic block"
+		   }
+		}
+	======================================================================
+	The same terraform file can be improved by using dynamic block, now look at the following terraform file -
+	=======================================================================
+	locals {
+		   ingress_rules = [{
+			  port        = 443
+			  description = "Ingress rules for port 443"
+		   },
+		   {
+			  port        = 80
+			  description = "Ingree rules for port 80"
+		   }]
+		}
+
+		resource "aws_security_group" "main" {
+		   name   = "resource_with_dynamic_block"
+		   vpc_id = data.aws_vpc.main.id
+
+		   dynamic "ingress" {
+			  for_each = local.ingress_rules
+
+			  content {
+				 description = ingress.value.description
+				 from_port   = ingress.value.port
+				 to_port     = ingress.value.port
+				 protocol    = "tcp"
+				 cidr_blocks = ["0.0.0.0/0"]
+			  }
+		   }
+
+		   tags = {
+			  Name = "AWS security group dynamic block"
+		   }
+		}
+	=======================================================================
+	Now you can imagine, if you need to define more than 2 ingress rules then using dynamic block can help you to reduce the line of code inside your terraform file.
+	Ingress rules are just an example but the same concept can be applied to another resource block.
+	
+	3. Best practices for dynamic block
+		Do not overuse the dynamic block when it is not necessary
+		Multiple nested dynamic blocks should be avoided otherwise it might cause you trouble in debugging and troubleshooting.
+		If the dynamic block is getting too complex inside your terraform file then it's better to use terraform module.
+		
+		
+		===========================================================================
+		locals {
+			   ingress_rules = [{
+				  port        = 443
+				  description = "Ingress rules for port 443"
+			   },
+			   {
+				  port        = 80
+				  description = "Ingree rules for port 80"
+			   }]
+			}
+
+			resource "aws_security_group" "main" {
+			   name   = "resource_with_dynamic_block"
+			   vpc_id = data.aws_vpc.main.id
+
+			   dynamic "ingress" {
+				  for_each = local.ingress_rules
+
+				  content {
+					 description = ingress.value.description
+					 from_port   = ingress.value.port
+					 to_port     = ingress.value.port
+					 protocol    = "tcp"
+					 cidr_blocks = ["0.0.0.0/0"]
+				  }
+			   }
+
+			   tags = {
+				  Name = "AWS security group dynamic block"
+			   }
+			}
+		===========================================================================
+		
+		
+Terraform Data sources:
+=======================
+		Terraform data sources can be beneficial if you want to retrieve or fetch the data from the cloud service providers such as AWS, AZURE, and GCP. 
+		Most of the time when we use Terraform along with AWS/AZURE/GCP then we always send data in terms of instructions or configuration.
+		
+		But what if you want to get the information(arn, tags, owner_id, etc.) back from the cloud service provider AWS/AZURE/GCP?
+		Answer - We need to use the data sources to get the resource information back.
+
+		So Terraform Data Sources are a kind of an API that fetches the data/information from the resources running under the cloud infra and sending 
+		it back to terraform configuration for further use.
+		
+		
+		1. Create an aws_instance
+			The motive of this exercise is to create an aws_instance and then create a data source to fetch all the possible Data Source: aws_instance attributes.
+			Let's first write the terraform configuration for starting a t2.mirco aws_instance.
+			(*Note- Replace the access_key and secret_key with your AWS account. Click here to know how to generate the access_key and secret_key )
+			
+		===============================================================================
+		provider "aws" {
+			   region     = "eu-central-1"
+			   access_key = "AKIATQ37NXB2JMXVGYPG"
+			   secret_key = "ockvEN1DzYynDuKIh56BVQv/tMqmzvKnYB8FttSp"
+			}
+
+			resource "aws_instance" "ec2_example" {
+
+			   ami           = "ami-0767046d1677be5a0"
+			   instance_type =  "t2.micro"
+
+			   tags = {
+					   Name = "Terraform EC2"
+			   }
+			}
+			
+			===============================================================================
+			
+			
+			2. Define a data source
+				Now we have created our aws_instance in Step 1, let's add the data source to the existing terraform configuration.
+				Here is the data source configuration for fetching all the information of aws_instance -
+				
+		
+		    ================================================================================
+			data "aws_instance" "myawsinstance" {
+				filter {
+				  name = "tag:Name"
+				  values = ["Terraform EC2"]
+				}
+
+				depends_on = [
+				  "aws_instance.ec2_example"
+				]
+			} 
+			
+			================================================================================
+			
+			
+			Key points to pay attention for -
+
+			filter: Although we have created only one instance but still we have used filter because in a production-like 
+			environment you might have multiple aws_instance running, so you need to filter the instance anyhow. 
+			And since we have tagged our aws_instance with the name Terraform EC2 so we are going to use the same name inside the filter also.
+			
+			depends_on: The second important parameter is depends_on because data source does not know by its own which resource it belongs to, 
+			so we are going to add the depends_on parameter.
+
+		3. Create Output variable for data source
+			So far in Step 1 and Step 2 we have created the aws_instance and data source, now let's create an output value so that we can see all the information fetched or retrieved by the data source.
+			Here is the terraform configuration for the output value -
+			
+			=================================================================================
+			output "fetched_info_from_aws" {
+				  value = data.aws_instance.myawsinstance
+				}
+			=================================================================================
+			
+			Key points to pay attention for -
+
+	We have linked the output value to the data source which we have created in Step 2.
+	To link the output value we are going to use the data source name .i.e. - data.aws_instance.myawsinstance
+
+
+	4. Apply the final terraform configuration along with data source and output values
+	Alright now I am assuming you have gone through all the 3 steps(Step 1,Step 2, and Step 3), 
+	so here is our final terraform configuration including aws_instance, data source, and output values
+	
+	========================================================================
+	provider "aws" {
+    region     = "eu-central-1"
+    access_key = "xxxxxx"
+    secret_key = "xxxxxxxxxx"
+		}
+
+		resource "aws_instance" "ec2_example" {
+
+			ami           = "ami-0767046d1677be5a0"
+			instance_type =  "t2.micro"
+
+			tags = {
+			  Name = "Terraform EC2"
+			}
+		}
+
+		data "aws_instance" "myawsinstance" {
+			filter {
+				name = "tag:Name"
+				values = ["Terraform EC2"]
+			}
+
+			depends_on = [
+			  "aws_instance.ec2_example"
+			]
+		}
+
+		output "fetched_info_from_aws" {
+		  value = data.aws_instance.myawsinstance.public_ip
+		}
+		========================================================================
+		You can simply run the following terraform command to create your aws_instance -
+		
+		
+		
+Backend Configuration
+	A backend defines where Terraform stores its state data files.
+
+	Terraform uses persisted state data to keep track of the resources it manages. 
+	Most non-trivial Terraform configurations either integrate with Terraform Cloud or use a backend to store state remotely. 
+	This lets multiple people access the state data and work together on that collection of infrastructure resources.		
+	
+	Available Backends:
+	 By default
+		-- Terraform uses a backend called local, which stores state as a local file on disk. You can also configure one of the built-in backends.
+
+		-- Some of these backends act like plain remote disks for state files, while others support locking the state while operations are being performed. 
+			This helps prevent conflicts and inconsistencies. The built-in backends listed are the only backends. You cannot load additional backends as plugins.
+			
+	Using a Backend Block
+		You do not need to configure a backend when using Terraform Cloud because Terraform Cloud automatically manages 
+		state in the workspaces associated with your configuration. If your configuration includes a cloud block, it cannot include a backend block.
+
+	To configure a backend, add a nested backend block within the top-level terraform block. 
+	The following example configures the remote backend.
+	
+	=================================================================================
+	terraform {
+		  backend "remote" {
+			organization = "example_corp"
+
+			workspaces {
+			  name = "my-app-prod"
+			}
+		  }
+		}
+		
+		=================================================================================
