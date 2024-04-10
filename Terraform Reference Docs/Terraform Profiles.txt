@@ -1,0 +1,107 @@
+3 Ways to Configure Terraform to use your AWS Account
+
+It is advisable that you create a dedicated set of AWS credentials from the IAM console with programmatic access for your Terraform CLI. 
+Make sure you grant least privileged based permissions, instead of full admin access, to limit the potential blast radius of Terraform.
+
+Approach #1: Embed credentials directly into the Terraform template file:
+
+	---------------------------------------------------------------------------
+				terraform {
+				required_providers {
+				  aws = {
+					source = "hashicorp/aws"
+					version = "~> 4.0.0"
+				  }
+				}
+			}
+
+			provider "aws" {
+				region = "us-east-1"
+				access_key = "your_aws_access_key"
+				secret_key = "your_aws_secret_access_key"
+			}
+			
+	----------------------------------------------------------------------------
+	
+		In the above main.tf file, you can simply add your AWS account’s credentials in the access_key and secret_key properties 
+		which Terraform would use when connecting to your AWS account.
+		
+		this approach is the fastest and the least secure way to achieve our goal. It is almost never a good idea to store your credentials in a an unencrypted text file like this, 
+		and this is especially BAD if you do so and check the file into version control like git.
+		
+		 if you want to quickly work with terraform locally only for practice it then delete afterwards then this should be fine. 
+		 But if you’re practicing anyways, let’s discuss a more secure approach.
+
+Approach #2: Leverage Terminal Environment Variables
+		The Terraform CLI is designed to detect the presence of the following environment variables in the current terminal session:
+
+			-- AWS_ACCESS_KEY_ID
+
+			-- AWS_SECRET_ACCESS_KEY
+
+		You can create these environment variables in your current terminal session by executing the following commands:	
+
+			------------------------------------------------------------------------
+			export AWS_ACCESS_KEY_ID=your_aws_access_key
+			export AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+			------------------------------------------------------------------------
+		And now you can omit these values from your main.tf file and safely check it in version control:	
+			--------------------------------------------------------------------------
+			
+				terraform {
+					required_providers {
+					  aws = {
+						source = "hashicorp/aws"
+						version = "~> 4.0.0"
+					  }
+					}
+				}
+
+				provider "aws" {
+					region = "us-east-1"
+				}
+				
+			---------------------------------------------------------------------------
+			
+Approach #3: Shared Credentials File
+
+		The third approach is to store these credentials in a credentials file in the local file system.
+		The AWS Terraform provider can be configured to use this file using the shared_credentials_file attribute:
+		
+		----------------------------------------------------------------------------------
+		terraform {
+			required_providers {
+			  aws = {
+				source = "hashicorp/aws"
+				version = "~> 4.0.0"
+			  }
+			}
+		}
+
+		provider "aws" {
+			region = "us-east-1"
+			shared_credentials_file = "/path/to/aws_credentials"
+		}
+		-- This approach is easiest for those users who already use the AWS CLI on their system in which case they would already have an existing credentials file in the .aws folder in their home directory. 
+		-- Or you can just create a new one in your project’s directory (but be sure to not commit that file into version control!).	
+
+	In the previous example I showed you how to use your existing AWS credentials file in your Terraform configuration using the shared_credentials_file attribute.
+
+	However, there is another simpler attribute you could use called profile which you declare the profile of the AWS credentials you use with Terraform and Terraform CLI will automatically try to look for the default location of the aws credentials file (usually in /home/.aws/credentials)
+
+				------------------------------------------------------------
+				terraform {
+					required_providers {
+					  aws = {
+						source = "hashicorp/aws"
+						version = "~> 4.0.0"
+					  }
+					}
+				}
+
+				provider "aws" {
+				  region = "us-east-1"
+				  profile= "terraform"
+				}
+				
+				-----------------------------------------------------------------
